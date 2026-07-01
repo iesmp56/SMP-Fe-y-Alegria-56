@@ -1771,7 +1771,6 @@ async function renderEstudiantes() {
   const sf = document.getElementById('fSecAdmin')?.value;
   if (gf) lista = lista.filter(e=>e.grado===gf);
   if (sf) lista = lista.filter(e=>e.seccion===sf);
-  if (cf) lista = lista.filter(e=>e.categoria===cf);
   const fecha = getFecha();
   const asist = _asistenciaHoyCache?.length ? _asistenciaHoyCache : await fsQuery('asistencia', FB.where('fecha','==',fecha));
   if (!_asistenciaHoyCache?.length) _asistenciaHoyCache = asist;
@@ -1781,7 +1780,6 @@ async function renderEstudiantes() {
     <div class="student-card ${presSet.has(e.id)?'presente':''}">
       <div class="student-name">${e.nombre}</div>
       <div class="student-grade">${e.grado} — Sección ${e.seccion}</div>
-      ${e.categoria ? `<div style="font-size:11px;color:var(--texto-suave);margin-top:2px;">🏅 ${e.categoria}</div>` : ''}
       <div class="qr-container" id="qr_${e.id}" data-qrid="${e.id}"></div>
       <small style="color:var(--texto-suave);font-size:10px;">DNI apod: ${e.dniPadre}</small>
       <div style="margin-top:7px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
@@ -1823,7 +1821,6 @@ async function abrirEditarEstudiante(id) {
   document.getElementById('editEstNombre').value = e.nombre || '';
   document.getElementById('editEstGrado').value = e.grado || '1°';
   document.getElementById('editEstSeccion').value = e.seccion || 'A';
-  document.getElementById('editEstCategoria').value = e.categoria || '';
   document.getElementById('editEstDNI').value = e.dniPadre || '';
   document.getElementById('editEstTelefono').value = e.telefono || '';
   document.getElementById('modalEditarEst').classList.add('open');
@@ -1834,13 +1831,12 @@ async function guardarEdicionEstudiante() {
   const nombre = document.getElementById('editEstNombre').value.trim();
   const grado = document.getElementById('editEstGrado').value;
   const seccion = document.getElementById('editEstSeccion').value;
-  const categoria = document.getElementById('editEstCategoria').value;
   const dniPadre = document.getElementById('editEstDNI').value.trim();
   const telefono = document.getElementById('editEstTelefono').value.trim();
   if (!nombre || !dniPadre) { notif('❌ Nombre y DNI son obligatorios','error'); return; }
   if (!/^(\d{8}|[A-Za-z0-9]{9,12})$/.test(dniPadre)) { notif('❌ DNI o carnet de extranjería inválido','error'); return; }
   try {
-    await fsUpdate('estudiantes', id, { nombre, grado, seccion, categoria, dniPadre, telefono });
+    await fsUpdate('estudiantes', id, { nombre, grado, seccion, dniPadre, telefono });
     document.getElementById('modalEditarEst').classList.remove('open');
     notif('✅ Estudiante actualizado correctamente','success');
     renderEstudiantes(); actualizarStats();
@@ -4225,7 +4221,6 @@ async function importProcesar() {
   const progreso = document.getElementById('importProgreso');
   if (!grado) { notif('⚠️ Selecciona el grado','warning'); return; }
   if (!seccion) { notif('⚠️ Selecciona la sección','warning'); return; }
-  const categoria = document.getElementById('importCategoria').value;
   if (!fileInput.files.length) { notif('⚠️ Selecciona un archivo Excel o CSV','warning'); return; }
   const file = fileInput.files[0];
   progreso.style.display = 'block';
@@ -4250,7 +4245,7 @@ async function importProcesar() {
           FB.where('seccion','==',seccion)
         );
         if (existe.length) { duplicados++; continue; }
-        await fsAdd('estudiantes', { nombre, grado, seccion, categoria, dniPadre, telefono });
+        await fsAdd('estudiantes', { nombre, grado, seccion, dniPadre, telefono });
         ok++;
       } catch(e) { errores++; }
       progreso.innerHTML = `<div style="font-size:13px;color:var(--texto-suave);">⏳ Importando ${i+1} de ${rows.length}...</div>`;
