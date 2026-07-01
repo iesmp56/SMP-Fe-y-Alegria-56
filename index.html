@@ -512,6 +512,18 @@ tr.row-alerta{background:#ffe8e8;border-left:3px solid var(--rojo);}
 
       <!-- ══ PANEL ADMIN ══ -->
       <div id="panel_admin" class="hide">
+        <!-- FIX-SEC-10: Aviso de configuración pendiente para el administrador -->
+        <div id="avisoSeguridad" class="info-box alert" style="margin-bottom:16px;background:#ffe8e8;border:2px solid #e60000;border-radius:10px;padding:14px 18px;">
+          <strong style="color:#cc0000;">🔐 Configuración de seguridad requerida</strong><br>
+          <span style="font-size:12px;color:#7a4f4f;">
+            Para proteger los datos del sistema, realiza estas acciones en
+            <a href="https://console.firebase.google.com" target="_blank" style="color:#e60000;">Firebase Console</a>:
+            <br>① Configura las <strong>Firestore Security Rules</strong> (ver comentario en el código fuente).
+            <br>② Crea el índice <strong>estudiantes → dniPadre</strong> en Firestore → Indexes.
+            <br>③ Activa el plan <strong>Blaze</strong> si tienes más de 800 estudiantes activos.
+          </span>
+          <button onclick="document.getElementById('avisoSeguridad').style.display='none'" style="float:right;background:none;border:none;font-size:16px;cursor:pointer;color:#cc0000;margin-top:-28px;">✕</button>
+        </div>
         <div class="stats-row" id="statsRow">
           <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">Estudiantes</div></div>
           <div class="stat-box"><div class="stat-num" id="statPresentes">—</div><div class="stat-lbl">Presentes hoy</div></div>
@@ -519,6 +531,7 @@ tr.row-alerta{background:#ffe8e8;border-left:3px solid var(--rojo);}
           <div class="stat-box amber"><div class="stat-num" id="statPct">—</div><div class="stat-lbl">% Asistencia</div></div>
           <div class="stat-box blue"><div class="stat-num" id="statJustif">0</div><div class="stat-lbl">Justif. pendientes</div></div>
         </div>
+
         <div class="card">
           <div class="card-header">
             <span class="card-title">👥 Gestión de Usuarios</span>
@@ -1438,6 +1451,9 @@ async function hacerLoginPadre() {
   try {
     // Login anónimo para poder leer Firestore (reglas requieren auth != null)
     if (!FB.auth.currentUser) await FB.signInAnonymously(FB.auth);
+    // Forzar refresco del token para asegurar que Firestore ya reconoce la sesión
+    // (evita permission-denied intermitente justo después de signInAnonymously)
+    await FB.auth.currentUser.getIdToken(true);
     // Buscar hijos directamente en Firestore por dniPadre (sin Cloud Function)
     const hijos = await fsQuery('estudiantes', FB.where('dniPadre','==',dni));
     if (!hijos.length) {
@@ -2565,6 +2581,9 @@ async function renderHijosInfo(hijos) {
             renderHijosInfo(hijos);
           }
         });
+      }, err => {
+        // Listener falló (permisos, red, etc.) — no rompe la app, solo se pierde el auto-refresh
+        console.warn('Listener de asistencia no disponible:', err.code);
       });
       _padreUnsubscribes.push(unsub);
     }catch(e2){}
