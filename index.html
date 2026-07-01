@@ -2301,7 +2301,7 @@ async function renderHijosInfo(hijos) {
         asistSemana.push(...rFiltrado);
         const hoy_reg=rFiltrado.find(a=>a.fecha===fecha);
         if(hoy_reg){ if(hoy_reg.estado==='ausente') ausenteSet.add(h.id); else if(hoy_reg.estado==='tardanza') tardSet.set(h.id,hoy_reg.hora||''); else if(hoy_reg.estado==='puntual'||hoy_reg.estado==='presente'||hoy_reg.estado==='justificado') presSet.add(h.id); }
-      } catch(e2){}
+      } catch(e2){ console.error('❌ Error consultando asistencia para', h.id, ':', e2.code, e2.message); }
     }
     for(const h of hijos) {
       try { const r=await fsQuery('justificaciones',FB.where('estudianteId','==',h.id),FB.where('fecha','==',fecha)); justifs.push(...r); } catch(e2){}
