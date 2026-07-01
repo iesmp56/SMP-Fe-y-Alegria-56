@@ -1350,6 +1350,9 @@ function _iniciarApp(fb) {
     FB.onAuthStateChanged(FB.auth, async (user) => {
       if (_ignorarAuthChange) return;
       if (user && sesion === null) {
+        // Los padres usan sesión anónima (sin doc en 'usuarios'); este listener
+        // es solo para staff con correo/contraseña — ignorar anónimos por completo.
+        if (user.isAnonymous) return;
         try {
           const snap = await FB.getDoc(FB.doc(FB.db,'usuarios', user.uid));
           if (snap.exists()) {
